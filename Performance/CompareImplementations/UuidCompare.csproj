@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>UuidCompare</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="BenchmarkDotNet" Version="0.13.10" />
+      <PackageReference Include="BenchmarkDotNet.Annotations" Version="0.13.10" />
+      <PackageReference Include="FSH.NewId" Version="23.2.0" />
+      <PackageReference Include="Medo.Uuid7" Version="1.8.1" />
+      <PackageReference Include="NewId" Version="4.0.1" />
+      <PackageReference Include="UuidExtensions" Version="1.2.0" />
+      <PackageReference Include="UUIDNext" Version="3.0.0-beta" />
+    </ItemGroup>
+
+</Project>

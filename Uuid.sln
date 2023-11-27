@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uuid", "Uuid\Uuid.csproj", "{779EF661-3581-42B0-8729-E45CED8A261E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UuidTests", "UuidTests\UuidTests.csproj", "{568FF221-3DDC-4393-B9F5-E8C440EC35FE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Performance", "Performance", "{92848952-A4A5-4118-B325-92B9406AB077}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uuid7Performance", "Performance\Uuid7Performance\Uuid7Performance.csproj", "{65E8D5AD-38DD-4044-A1C0-72040D1DBF49}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CompareImplementations", "CompareImplementations", "{66D04B17-C807-431A-8C73-19A94D1905DB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComparePostgreInsert", "ComparePostgreInsert", "{5CCA68E9-D07A-4383-BF0A-752506281A38}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UuidCompare", "Performance\CompareImplementations\UuidCompare.csproj", "{563158B4-2E44-4791-8420-09FDC860B26F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GuidVSUuid7", "ComparePostgreInsert\GuidVSUuid7.csproj", "{31167209-6733-418C-A035-DAF101EC3A0D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{779EF661-3581-42B0-8729-E45CED8A261E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{779EF661-3581-42B0-8729-E45CED8A261E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{779EF661-3581-42B0-8729-E45CED8A261E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{779EF661-3581-42B0-8729-E45CED8A261E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{568FF221-3DDC-4393-B9F5-E8C440EC35FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{568FF221-3DDC-4393-B9F5-E8C440EC35FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{568FF221-3DDC-4393-B9F5-E8C440EC35FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{568FF221-3DDC-4393-B9F5-E8C440EC35FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65E8D5AD-38DD-4044-A1C0-72040D1DBF49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65E8D5AD-38DD-4044-A1C0-72040D1DBF49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65E8D5AD-38DD-4044-A1C0-72040D1DBF49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65E8D5AD-38DD-4044-A1C0-72040D1DBF49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{563158B4-2E44-4791-8420-09FDC860B26F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{563158B4-2E44-4791-8420-09FDC860B26F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{563158B4-2E44-4791-8420-09FDC860B26F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{563158B4-2E44-4791-8420-09FDC860B26F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31167209-6733-418C-A035-DAF101EC3A0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31167209-6733-418C-A035-DAF101EC3A0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31167209-6733-418C-A035-DAF101EC3A0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31167209-6733-418C-A035-DAF101EC3A0D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{65E8D5AD-38DD-4044-A1C0-72040D1DBF49} = {92848952-A4A5-4118-B325-92B9406AB077}
+		{563158B4-2E44-4791-8420-09FDC860B26F} = {66D04B17-C807-431A-8C73-19A94D1905DB}
+		{31167209-6733-418C-A035-DAF101EC3A0D} = {5CCA68E9-D07A-4383-BF0A-752506281A38}
+	EndGlobalSection
+EndGlobal
