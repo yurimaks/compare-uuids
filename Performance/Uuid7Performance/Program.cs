@@ -17,7 +17,7 @@ namespace MyBenchmarks
                 .AddDiagnoser(MemoryDiagnoser.Default)
                 .AddJob(Job
                     .ShortRun
-                    //.WithToolchain(CsProjCoreToolchain.NetCoreApp80)
+                    .WithToolchain(CsProjCoreToolchain.NetCoreApp80)
                     //.WithPlatform(Platform.X64)
                     .WithToolchain(InProcessNoEmitToolchain.Instance));
 
@@ -25,7 +25,8 @@ namespace MyBenchmarks
             {
                 //typeof(UuidCreationsViaCtor),
                 //typeof(UuidCreationsViaStatic),
-                typeof(ToStringTests)
+                //typeof(ToStringTests)
+                typeof(ParseString)
             }, config);
         }
     }

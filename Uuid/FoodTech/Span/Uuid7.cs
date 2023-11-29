@@ -1,4 +1,6 @@
-﻿namespace FoodTech.Span;
+﻿using Uuid;
+
+namespace FoodTech.Span;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;

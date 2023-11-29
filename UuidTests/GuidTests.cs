@@ -18,12 +18,21 @@ public class GuidTests
         var byteArrayBigEndian = originalIdStr.ToByteArray();
         var byteArrayLittleEndian = originalIdStr.ToByteArray(true);
 
-
-
         Assert.Equal(originalHexStringWithBigEndian, Convert.ToHexString(byteArrayBigEndian));
         Assert.Equal(originalHexStringWithLittleEndian, Convert.ToHexString(byteArrayLittleEndian));
         Assert.Equal(originalBinaryStringWithBigEndian, ToBinaryString(byteArrayBigEndian));
         Assert.Equal(originalBinaryStringWithLittleEndian, ToBinaryString(byteArrayLittleEndian));
+    }
+
+    [Fact]
+    public void CompareGuidRegistry()
+    {
+        var originalStringLowerCase = "12345678-9abc-def0-1234-56789abcdef0";
+        var originalStringUpperCase = "12345678-9ABC-DEF0-1234-56789ABCDEF0";
+        var guidLower = new Guid(originalStringLowerCase);
+        var guidUpper = new Guid(originalStringUpperCase);
+
+        Assert.Equal(guidLower, guidUpper);
     }
 
     private static string ToBinaryString(Span<byte> bytes)

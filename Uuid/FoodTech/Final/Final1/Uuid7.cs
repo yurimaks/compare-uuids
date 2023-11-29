@@ -1,6 +1,6 @@
 ﻿using Uuid;
 
-namespace FoodTech.Span.SpanCtor;
+namespace FoodTech.Uuid;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -67,14 +67,14 @@ public readonly struct Uuid7 :
     /// </summary>
     public Uuid7()
     {
-        Span<byte> bytes = stackalloc byte[16];
-        FillBytes7(bytes, ref PerThreadLastMillisecond, ref PerThreadMillisecondCounter, ref PerThreadMonotonicCounter);
-        Bytes = bytes.ToArray();
+        Bytes = new byte[16];
+        FillBytes7(Bytes, ref PerThreadLastMillisecond, ref PerThreadMillisecondCounter, ref PerThreadMonotonicCounter);
     }
 
     /// <summary>
     /// Creates a new instance from given GUID bytes.
     /// No check if GUID is version 7 UUID is made.
+    /// Base endianness is littleEndian between convert
     /// </summary>
     public Uuid7(Guid guid)
     {
@@ -83,17 +83,15 @@ public readonly struct Uuid7 :
 
     public Uuid7(ReadOnlySpan<byte> span)
     {
-        if (span == null) throw new ArgumentNullException(nameof(span), "Span cannot be null.");
-        if (span.Length != 16)throw new ArgumentOutOfRangeException(nameof(span), "Span must be exactly 16 bytes in length.");
+        if (span == null) ArgumentNullException.ThrowIfNull(nameof(span));
+        if (span.Length != 16) ArgumentOutOfRangeException.ThrowIfNotEqual(16, span.Length);
 
         Bytes = new byte[16];
         span.CopyTo(Bytes);
     }
 
     /// <summary>
-    /// Creates a new instance with a given byte array.
-    /// No check UUID version.
-    /// No check for array length is made.
+    /// Creates a new instance with a given byte array with no validation
     /// </summary>
     private Uuid7(Span<byte> buffer)
     {
@@ -101,19 +99,19 @@ public readonly struct Uuid7 :
     }
 
     /// <summary>
-    /// A read-only instance of the Guid structure whose value is all zeros.
+    /// A read-only instance of the Uuid7 - all values are zeros.
     /// Please note this is not a valid UUID7 as it lacks the correct version bits.
     /// </summary>
     public static readonly Uuid7 Empty = new(new byte[16]);
 
     /// <summary>
-    /// A read-only instance of the Guid structure whose value is all zeros.
+    /// A read-only instance of the Uuid7 - all values are zeros.
     /// Please note this is not a valid UUID7 as it lacks the correct version bits.
     /// </summary>
     public static readonly Uuid7 MinValue = new(new byte[16]);
 
     /// <summary>
-    /// A read-only instance of the Guid structure whose value is all ones.
+    /// A read-only instance of the Uuid7 - all values are FF.
     /// Please note this is not a valid UUID7 as it lacks the correct version bits.
     /// </summary>
     public static readonly Uuid7 MaxValue = new(new byte[] { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 });
@@ -140,7 +138,7 @@ public readonly struct Uuid7 :
 
     public byte[] ToByteArray()
     {
-        Span<byte> copy = new byte[16];
+        Span<byte> copy = stackalloc byte[16];
         Bytes.CopyTo(copy);
         return copy.ToArray();
     }
@@ -362,42 +360,44 @@ public readonly struct Uuid7 :
         };
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string WriteAsDefaultString(ReadOnlySpan<byte> bytes)
     {
-        byte offset = 0;
-        Span<char> guidChars = stackalloc char[36];
+        Span<char> destChars = stackalloc char[36];
 
-        offset = HexsToChars(guidChars, offset, bytes[0], bytes[1]);
-        offset = HexsToChars(guidChars, offset, bytes[2],bytes[3]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[4], bytes[5]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[6], bytes[7]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[8], bytes[9]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[10], bytes[11]);
-        offset = HexsToChars(guidChars, offset, bytes[12], bytes[13]);
-        HexsToChars(guidChars, offset, bytes[14], bytes[15]);
+        HexByteToTwoChars(destChars, 0, 1, bytes[0]);
+        HexByteToTwoChars(destChars, 2, 3, bytes[1]);
+        HexByteToTwoChars(destChars, 4, 5, bytes[2]);
+        HexByteToTwoChars(destChars, 6, 7, bytes[3]);
+        destChars[8] = '-';
+        HexByteToTwoChars(destChars, 9, 10, bytes[4]);
+        HexByteToTwoChars(destChars, 11, 12, bytes[5]);
+        destChars[13] = '-';
+        HexByteToTwoChars(destChars, 14, 15, bytes[6]);
+        HexByteToTwoChars(destChars, 16, 17, bytes[7]);
+        destChars[18] = '-';
+        HexByteToTwoChars(destChars, 19, 20, bytes[8]);
+        HexByteToTwoChars(destChars, 21, 22, bytes[9]);
+        destChars[23] = '-';
+        HexByteToTwoChars(destChars, 24, 25, bytes[10]);
+        HexByteToTwoChars(destChars, 26, 27, bytes[11]);
+        HexByteToTwoChars(destChars, 28, 29, bytes[12]);
+        HexByteToTwoChars(destChars, 30, 31, bytes[13]);
+        HexByteToTwoChars(destChars, 32, 33, bytes[14]);
+        HexByteToTwoChars(destChars, 34, 35, bytes[15]);
 
-        return new string(guidChars);
+        return new string(destChars);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static byte HexsToChars(Span<char> guidChars, byte offset, int byteOne, int byteTwo)
+    private static void HexByteToTwoChars(Span<char> destChars, byte indexOne, byte indexTwo, byte thisByte)
     {
-        guidChars[offset++] = HexToChar(byteOne >> 4);
-        guidChars[offset++] = HexToChar(byteOne);
-        guidChars[offset++] = HexToChar(byteTwo >> 4);
-        guidChars[offset++] = HexToChar(byteTwo);
-        return offset;
+        destChars[indexOne] = Base16Alphabet[thisByte >> 4];
+        destChars[indexTwo] = Base16Alphabet[thisByte & 0x0F];
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static char HexToChar(int a)
-    {
-        a = a & 0xf;
-        return (char)((a > 9) ? a - 10 + 0x61 : a + 0x30);
-    }
+    private static readonly char[] Base16Alphabet = {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
+
 }

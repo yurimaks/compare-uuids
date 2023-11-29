@@ -1,4 +1,6 @@
-﻿namespace FoodTech.Span.SpanStringRefact;
+﻿using Uuid;
+
+namespace FoodTech.Span.SpanStringRefact;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -358,7 +360,6 @@ public readonly struct Uuid7 :
         };
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string WriteAsDefaultString(ReadOnlySpan<byte> bytes)
     {
         Span<char> destChars = stackalloc char[36];

@@ -1,6 +1,8 @@
-﻿using Uuid;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
+using Uuid;
 
-namespace FoodTech.Span.SpanCtor;
+namespace FoodTech.Uuid.Final.old;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -67,14 +69,14 @@ public readonly struct Uuid7 :
     /// </summary>
     public Uuid7()
     {
-        Span<byte> bytes = stackalloc byte[16];
-        FillBytes7(bytes, ref PerThreadLastMillisecond, ref PerThreadMillisecondCounter, ref PerThreadMonotonicCounter);
-        Bytes = bytes.ToArray();
+        Bytes = new byte[16];
+        FillBytes7(Bytes, ref PerThreadLastMillisecond, ref PerThreadMillisecondCounter, ref PerThreadMonotonicCounter);
     }
 
     /// <summary>
     /// Creates a new instance from given GUID bytes.
     /// No check if GUID is version 7 UUID is made.
+    /// Base endianness is littleEndian between convert
     /// </summary>
     public Uuid7(Guid guid)
     {
@@ -83,17 +85,24 @@ public readonly struct Uuid7 :
 
     public Uuid7(ReadOnlySpan<byte> span)
     {
-        if (span == null) throw new ArgumentNullException(nameof(span), "Span cannot be null.");
-        if (span.Length != 16)throw new ArgumentOutOfRangeException(nameof(span), "Span must be exactly 16 bytes in length.");
+        ArgumentNullException.ThrowIfNull(nameof(span));
+        if (span.Length != 16) ArgumentOutOfRangeException.ThrowIfNotEqual(16, span.Length, nameof(span));
 
         Bytes = new byte[16];
         span.CopyTo(Bytes);
     }
 
+    public Uuid7(string input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        var result = new UuidResult();
+        TryParseUuid(input, ref result);
+        Bytes = result.Bytes;
+    }
+    
     /// <summary>
-    /// Creates a new instance with a given byte array.
-    /// No check UUID version.
-    /// No check for array length is made.
+    /// Creates a new instance with a given byte array with no validation
     /// </summary>
     private Uuid7(Span<byte> buffer)
     {
@@ -101,19 +110,19 @@ public readonly struct Uuid7 :
     }
 
     /// <summary>
-    /// A read-only instance of the Guid structure whose value is all zeros.
+    /// A read-only instance of the Uuid7 - all values are zeros.
     /// Please note this is not a valid UUID7 as it lacks the correct version bits.
     /// </summary>
     public static readonly Uuid7 Empty = new(new byte[16]);
 
     /// <summary>
-    /// A read-only instance of the Guid structure whose value is all zeros.
+    /// A read-only instance of the Uuid7 - all values are zeros.
     /// Please note this is not a valid UUID7 as it lacks the correct version bits.
     /// </summary>
     public static readonly Uuid7 MinValue = new(new byte[16]);
 
     /// <summary>
-    /// A read-only instance of the Guid structure whose value is all ones.
+    /// A read-only instance of the Uuid7 - all values are FF.
     /// Please note this is not a valid UUID7 as it lacks the correct version bits.
     /// </summary>
     public static readonly Uuid7 MaxValue = new(new byte[] { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 });
@@ -140,7 +149,7 @@ public readonly struct Uuid7 :
 
     public byte[] ToByteArray()
     {
-        Span<byte> copy = new byte[16];
+        Span<byte> copy = stackalloc byte[16];
         Bytes.CopyTo(copy);
         return copy.ToArray();
     }
@@ -284,7 +293,7 @@ public readonly struct Uuid7 :
         if (obj is Uuid7 uuid7) return CompareTo(uuid7);
         if (obj is Guid guid) return CompareTo(guid);
 
-        throw new ArgumentException("Arg_MustBeGuidOrUuid");
+        return ThrowIfNotEqual($"Neither {nameof(Guid)} nor {nameof(Uuid7)} but {obj.GetType().Name}");
     }
 
     private static int CompareArrays(ReadOnlySpan<byte> array1, ReadOnlySpan<byte> array2)
@@ -354,50 +363,302 @@ public readonly struct Uuid7 :
     public string ToString(string? format, IFormatProvider? provider)
     {
         if (string.IsNullOrEmpty(format)) format = "D";
-        if (format.Length != 1) ThrowHelper.ThrowInvalidUuidFormatSpecification();
+        if (format.Length != 1) ThrowBadGuidFormatSpecification();
         return format[0] switch
         {
             'D' or 'd' => WriteAsDefaultString(Bytes),
-            _ => ThrowHelper.ThrowInvalidUuidFormatSpecification()
+            _ => ThrowBadGuidFormatSpecification()
         };
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string WriteAsDefaultString(ReadOnlySpan<byte> bytes)
     {
-        byte offset = 0;
-        Span<char> guidChars = stackalloc char[36];
+        Span<char> destChars = stackalloc char[36];
 
-        offset = HexsToChars(guidChars, offset, bytes[0], bytes[1]);
-        offset = HexsToChars(guidChars, offset, bytes[2],bytes[3]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[4], bytes[5]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[6], bytes[7]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[8], bytes[9]);
-        guidChars[offset++] = '-';
-        offset = HexsToChars(guidChars, offset, bytes[10], bytes[11]);
-        offset = HexsToChars(guidChars, offset, bytes[12], bytes[13]);
-        HexsToChars(guidChars, offset, bytes[14], bytes[15]);
+        HexByteToTwoChars(destChars, 0, 1, bytes[0]);
+        HexByteToTwoChars(destChars, 2, 3, bytes[1]);
+        HexByteToTwoChars(destChars, 4, 5, bytes[2]);
+        HexByteToTwoChars(destChars, 6, 7, bytes[3]);
+        destChars[8] = '-';
+        HexByteToTwoChars(destChars, 9, 10, bytes[4]);
+        HexByteToTwoChars(destChars, 11, 12, bytes[5]);
+        destChars[13] = '-';
+        HexByteToTwoChars(destChars, 14, 15, bytes[6]);
+        HexByteToTwoChars(destChars, 16, 17, bytes[7]);
+        destChars[18] = '-';
+        HexByteToTwoChars(destChars, 19, 20, bytes[8]);
+        HexByteToTwoChars(destChars, 21, 22, bytes[9]);
+        destChars[23] = '-';
+        HexByteToTwoChars(destChars, 24, 25, bytes[10]);
+        HexByteToTwoChars(destChars, 26, 27, bytes[11]);
+        HexByteToTwoChars(destChars, 28, 29, bytes[12]);
+        HexByteToTwoChars(destChars, 30, 31, bytes[13]);
+        HexByteToTwoChars(destChars, 32, 33, bytes[14]);
+        HexByteToTwoChars(destChars, 34, 35, bytes[15]);
 
-        return new string(guidChars);
+        return new string(destChars);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static byte HexsToChars(Span<char> guidChars, byte offset, int byteOne, int byteTwo)
+    private static void HexByteToTwoChars(Span<char> destChars, byte indexOne, byte indexTwo, byte thisByte)
     {
-        guidChars[offset++] = HexToChar(byteOne >> 4);
-        guidChars[offset++] = HexToChar(byteOne);
-        guidChars[offset++] = HexToChar(byteTwo >> 4);
-        guidChars[offset++] = HexToChar(byteTwo);
-        return offset;
+        destChars[indexOne] = Base16Alphabet[thisByte >> 4];
+        destChars[indexTwo] = Base16Alphabet[thisByte & 0x0F];
+    }
+
+    private static readonly BigInteger Base16Modulo = 16;
+    private static readonly char[] Base16Alphabet = new char[] {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
+    private static readonly Lazy<Dictionary<char, BigInteger>> Base16AlphabetDict = new(() => {
+        var dict = new Dictionary<char, BigInteger>();
+        for (var i = 0; i < Base16Alphabet.Length; i++) {
+            var ch = Base16Alphabet[i];
+            dict.Add(ch, i);
+            if (char.IsLetter(ch)) { dict.Add(char.ToUpperInvariant(ch), i); }  // case-insensitive
+        }
+        return dict;
+    });
+
+    public static Uuid7 FromString_SpanAndSlice(string text)
+    {
+        Span<char> charArray = text.ToCharArray();
+        Span<char> destination = new char[32];
+        charArray.Slice(0, 8).CopyTo(destination.Slice(0, 8));
+        charArray.Slice(9, 4).CopyTo(destination.Slice(8, 4));
+        charArray.Slice(14, 4).CopyTo(destination.Slice(12, 4));
+        charArray.Slice(19, 4).CopyTo(destination.Slice(16, 4));
+        charArray.Slice(24).CopyTo(destination.Slice(20));
+        var bytes = Convert.FromHexString(destination);
+        return new Uuid7(bytes);
+    }
+
+    public static Uuid7 FromString_BigIntAndMultiPly(string text)
+    {
+        var alphabetDict = Base16AlphabetDict.Value;
+        var count = 0;
+        var number = new BigInteger();
+        foreach (var ch in text) {
+            if (alphabetDict.TryGetValue(ch, out var offset)) {
+                number = BigInteger.Multiply(number, Base16Modulo);
+                number = BigInteger.Add(number, offset);
+                count++;
+            }
+        }
+
+        var buffer = number.ToByteArray(isUnsigned: true, isBigEndian: true);
+        return new Uuid7(buffer);
+    }
+
+    public static Uuid7 FromString_ParseAsGuid(string input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        return FromString_ParseAsGuid1((ReadOnlySpan<char>)input);
+    }
+
+    public static Uuid7 FromString_ParseAsGuid1(ReadOnlySpan<char> input)
+    {
+        var result = new UuidResult();
+        bool success = TryParseUuid(input, ref result);
+        return new Uuid7();
+        //return new Uuid7(result.Bytes);
+    }
+
+    private static bool TryParseUuid(ReadOnlySpan<char> uuidString, ref UuidResult result)
+    {
+        uuidString = uuidString.Trim();
+
+        if (uuidString.Length < 32) return false;
+        return uuidString[0] switch
+        {
+            '(' => TryParseExactP(uuidString, ref result),
+            '{' => uuidString[9] == '-' ?
+                TryParseExactB(uuidString, ref result) :
+                TryParseExactX(uuidString, ref result),
+            _ => uuidString[8] == '-' ?
+                TryParseExactD(uuidString, ref result) :
+                TryParseExactN(uuidString, ref result),
+        };
+    }
+
+    private static bool TryParseExactB(ReadOnlySpan<char> guidString, ref UuidResult result)
+    {
+        // e.g. "{d85b1407-351d-4694-9392-03acc5870eb1}"
+
+        if (guidString.Length != 38 || guidString[0] != '{' || guidString[37] != '}')
+        {
+            result.SetFailure(ParseFailure.Format_UuidInvLen);
+            return false;
+        }
+
+        return TryParseExactD(guidString.Slice(1, 36), ref result);
+    }
+
+    private static bool TryParseExactD(ReadOnlySpan<char> guidString, ref UuidResult result)
+    {
+        // e.g. "d85b1407-351d-4694-9392-03acc5870eb1"
+
+        if (guidString.Length != 36 || guidString[8] != '-' || guidString[13] != '-' || guidString[18] != '-' || guidString[23] != '-')
+        {
+            result.SetFailure(guidString.Length != 36 ? ParseFailure.Format_UuidInvLen : ParseFailure.Format_UuidDashes);
+            return false;
+        }
+
+        //Span<byte> bytes = stackalloc byte[16];
+        var bytes = result.Bytes;
+        int invalidIfNegative = 0;
+        bytes[0] = DecodeByte(guidString[0], guidString[1], ref invalidIfNegative);
+        bytes[1] = DecodeByte(guidString[2], guidString[3], ref invalidIfNegative);
+        bytes[2] = DecodeByte(guidString[4], guidString[5], ref invalidIfNegative);
+        bytes[3] = DecodeByte(guidString[6], guidString[7], ref invalidIfNegative);
+        bytes[4] = DecodeByte(guidString[9], guidString[10], ref invalidIfNegative);
+        bytes[5] = DecodeByte(guidString[11], guidString[12], ref invalidIfNegative);
+        bytes[6] = DecodeByte(guidString[14], guidString[15], ref invalidIfNegative);
+        bytes[7] = DecodeByte(guidString[16], guidString[17], ref invalidIfNegative);
+        bytes[8] = DecodeByte(guidString[19], guidString[20], ref invalidIfNegative);
+        bytes[9] = DecodeByte(guidString[21], guidString[22], ref invalidIfNegative);
+        bytes[10] = DecodeByte(guidString[24], guidString[25], ref invalidIfNegative);
+        bytes[11] = DecodeByte(guidString[26], guidString[27], ref invalidIfNegative);
+        bytes[12] = DecodeByte(guidString[28], guidString[29], ref invalidIfNegative);
+        bytes[13] = DecodeByte(guidString[30], guidString[31], ref invalidIfNegative);
+        bytes[14] = DecodeByte(guidString[32], guidString[33], ref invalidIfNegative);
+        bytes[15] = DecodeByte(guidString[34], guidString[35], ref invalidIfNegative);
+
+       //result.Bytes = bytes.ToArray();
+
+        if (invalidIfNegative >= 0)
+        {
+            return true;
+        }
+
+        result.SetFailure(ParseFailure.Format_UuidInvalidChar);
+        return false;
+    }
+
+    private static bool TryParseExactN(ReadOnlySpan<char> guidString, ref UuidResult result)
+    {
+        // e.g. "d85b1407351d4694939203acc5870eb1"
+
+        if (guidString.Length != 32)
+        {
+            result.SetFailure(ParseFailure.Format_UuidInvLen);
+            return false;
+        }
+
+        //Span<byte> bytes = MemoryMarshal.AsBytes(new Span<UuidResult>(ref result));
+        Span<byte> bytes = stackalloc byte[10];
+        int invalidIfNegative = 0;
+        bytes[0] = DecodeByte(guidString[0], guidString[1], ref invalidIfNegative);
+        bytes[1] = DecodeByte(guidString[2], guidString[3], ref invalidIfNegative);
+        bytes[2] = DecodeByte(guidString[4], guidString[5], ref invalidIfNegative);
+        bytes[3] = DecodeByte(guidString[6], guidString[7], ref invalidIfNegative);
+        bytes[4] = DecodeByte(guidString[8], guidString[9], ref invalidIfNegative);
+        bytes[5] = DecodeByte(guidString[10], guidString[11], ref invalidIfNegative);
+        bytes[6] = DecodeByte(guidString[12], guidString[13], ref invalidIfNegative);
+        bytes[7] = DecodeByte(guidString[14], guidString[15], ref invalidIfNegative);
+        bytes[8] = DecodeByte(guidString[16], guidString[17], ref invalidIfNegative);
+        bytes[9] = DecodeByte(guidString[18], guidString[19], ref invalidIfNegative);
+        bytes[10] = DecodeByte(guidString[20], guidString[21], ref invalidIfNegative);
+        bytes[11] = DecodeByte(guidString[22], guidString[23], ref invalidIfNegative);
+        bytes[12] = DecodeByte(guidString[24], guidString[25], ref invalidIfNegative);
+        bytes[13] = DecodeByte(guidString[26], guidString[27], ref invalidIfNegative);
+        bytes[14] = DecodeByte(guidString[28], guidString[29], ref invalidIfNegative);
+        bytes[15] = DecodeByte(guidString[30], guidString[31], ref invalidIfNegative);
+
+        result.Bytes = bytes.ToArray();
+
+        result.SetFailure(ParseFailure.Format_UuidInvalidChar);
+        return false;
+    }
+
+    private static bool TryParseExactP(ReadOnlySpan<char> guidString, ref UuidResult result)
+    {
+        // e.g. "(d85b1407-351d-4694-9392-03acc5870eb1)"
+
+        if (guidString.Length != 38 || guidString[0] != '(' || guidString[37] != ')')
+        {
+            result.SetFailure(ParseFailure.Format_UuidInvLen);
+            return false;
+        }
+
+        return TryParseExactD(guidString.Slice(1, 36), ref result);
+    }
+
+    private static bool TryParseExactX(ReadOnlySpan<char> guidString, ref UuidResult result)
+    {
+        result.SetFailure(ParseFailure.Unsupported_UuidFormat);
+        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static char HexToChar(int a)
+    private static byte DecodeByte(char ch1, char ch2, ref int invalidIfNegative)
     {
-        a = a & 0xf;
-        return (char)((a > 9) ? a - 10 + 0x61 : a + 0x30);
+        ReadOnlySpan<byte> lookup = HexConverter.CharToHexLookup;
+
+        int upper = (sbyte)lookup[(byte)ch1];
+        int lower = (sbyte)lookup[(byte)ch2];
+        int result = (upper << 4) | lower;
+
+        // Result will be negative if ch1 or/and ch2 are greater than 0xFF
+        result = (ch1 | ch2) >> 8 == 0 ? result : -1;
+        invalidIfNegative |= result;
+        return (byte)result;
     }
+
+    private enum ParseFailure
+    {
+        Format_ExtraJunkAtEnd,
+        Format_UuidBraceAfterLastNumber,
+        Format_UuidBrace,
+        Format_UuidComma,
+        Format_UuidDashes,
+        Format_UuidEndBrace,
+        Format_UuidHexPrefix,
+        Format_UuidInvalidChar,
+        Format_UuidInvLen,
+        Format_UuidUnrecognized,
+        Unsupported_UuidFormat,
+        Overflow_Byte,
+        Overflow_UInt32,
+    }
+
+    private struct UuidResult()
+    {
+        internal byte[] Bytes = new byte[16];
+
+        internal readonly void SetFailure(ParseFailure failureKind)
+        {
+
+            if (failureKind == ParseFailure.Overflow_UInt32)
+            {
+                throw new OverflowException("Overflow_UInt32");
+            }
+
+            if (failureKind == ParseFailure.Unsupported_UuidFormat)
+            {
+                throw new ArgumentException(nameof(ParseFailure.Unsupported_UuidFormat));
+            }
+
+            throw new FormatException(failureKind switch
+            {
+                ParseFailure.Format_ExtraJunkAtEnd => "Format_ExtraJunkAtEnd",
+                ParseFailure.Format_UuidBraceAfterLastNumber => "Format_GuidBraceAfterLastNumber",
+                ParseFailure.Format_UuidBrace => "Format_GuidBrace",
+                ParseFailure.Format_UuidComma => "Format_GuidComma",
+                ParseFailure.Format_UuidDashes => "Format_GuidDashes",
+                ParseFailure.Format_UuidEndBrace=> "Format_GuidEndBrace",
+                ParseFailure.Format_UuidHexPrefix => "Format_GuidHexPrefix",
+                ParseFailure.Format_UuidInvalidChar => "Format_GuidInvalidChar",
+                ParseFailure.Format_UuidInvLen => "Format_GuidInvLen",
+                _ => "Format_GuidUnrecognized"
+            });
+        }
+    }
+
+    [DoesNotReturn]
+    private static string ThrowBadGuidFormatSpecification() => throw new FormatException("Format_InvalidGuidFormatSpecification");
+
+    [DoesNotReturn]
+    private static int ThrowIfNotEqual(string message) => throw new ArgumentException(message);
 }

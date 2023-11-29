@@ -1,4 +1,6 @@
-﻿namespace FoodTech.Span.BufferGenerate;
+﻿using Uuid;
+
+namespace FoodTech.Span.BufferGenerate;
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;

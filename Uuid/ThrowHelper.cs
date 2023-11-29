@@ -16,4 +16,9 @@ internal static class ThrowHelper
     {
         throw new ArgumentOutOfRangeException("Must be exactly 16 bytes in length.");
     }
+
+    public static void ThrowCannotBeNullOrEmpty()
+    {
+        throw new ArgumentNullException("Cannot be null or empty");
+    }
 }

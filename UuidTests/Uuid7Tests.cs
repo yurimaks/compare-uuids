@@ -1,6 +1,6 @@
 namespace UuidTests;
 
-using FoodTech.Span.SpanStringRefact;
+using FoodTech.Uuid.Final;
 
 public class Uuid7Tests
 {
@@ -72,7 +72,29 @@ public class Uuid7Tests
 
         var result = originalId == roundTripParsedId;
         Assert.True(result);
+    }
 
+    [Fact]
+    public void ParseString()
+    {
+        var originalString = "12345678-9abc-def0-1234-56789abcdef0";
+        var result = Uuid7.Parse(originalString);
+        Assert.Equal(originalString, result.ToString());
+    }
+
+    [Fact]
+    public void UuidParseFromCtor()
+    {
+        var originalString = "12345678-9abc-def0-1234-56789abcdef0";
+        var result = new Uuid7(originalString);
+        Assert.Equal(originalString, result.ToString());
+    }
+
+    [Fact]
+    public void UuidParseWithBrakesFromString()
+    {
+        var result = new Uuid7("{12345678-9abc-def0-1234-56789abcdef0}");
+        Assert.Equal("12345678-9abc-def0-1234-56789abcdef0", result.ToString());
     }
 
     [Fact]
