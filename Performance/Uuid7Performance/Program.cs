@@ -23,9 +23,9 @@ namespace MyBenchmarks
 
             var summary = BenchmarkRunner.Run(types:new[]
             {
-                //typeof(UuidCreationsViaCtor),
-                //typeof(UuidCreationsViaStatic),
-                //typeof(ToStringTests)
+                typeof(UuidCreationsViaCtor),
+                typeof(UuidCreationsViaStatic),
+                typeof(ToStringTests),
                 typeof(ParseString)
             }, config);
         }

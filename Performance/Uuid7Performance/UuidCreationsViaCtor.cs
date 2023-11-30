@@ -1,23 +1,41 @@
 ﻿using BenchmarkDotNet.Attributes;
 using MedoUuid7 = Medo.Uuid7;
-using FoodTechSpanUuid7 = FoodTech.Span.Uuid7;
-using FoodTechSpanCtorSpanUuid7 = FoodTech.Span.SpanCtor.Uuid7;
-using FoodTechBufferUuid7 = FoodTech.Span.BufferGenerate.Uuid7;
+using Uuid7 = FoodTech.Uuid.Final.Uuid7;
+//using FoodTechSpanCtorSpanUuid7 = FoodTech.Span.SpanCtor.Uuid7;
+//using FoodTechBufferUuid7 = FoodTech.Span.BufferGenerate.Uuid7;
 
 namespace MyBenchmarks;
 
 [AllStatisticsColumn]
 public class UuidCreationsViaCtor
 {
+    private string OriginalString;
+
+    [GlobalSetup]
+    public void GlobalSetup()
+    {
+        OriginalString = "12345678-9abc-def0-1234-56789abcdef0";
+    }
+    
+    
     [Benchmark(Baseline = true)]
-    public MedoUuid7 Medo_Ctor() => new MedoUuid7();
+    public Guid Guid_Ctor() => new Guid();
+    
+    [Benchmark]
+    public Guid Guid_Ctor_Str() => new Guid(OriginalString);
 
     [Benchmark]
-    public FoodTechSpanUuid7 FoodTechSpan_Ctor() => new FoodTechSpanUuid7();
+    public Uuid7 FoodTechSpan_Ctor() => new Uuid7();
 
     [Benchmark]
-    public FoodTechSpanCtorSpanUuid7 FoodTechSpan_CtorSpan() => new FoodTechSpanCtorSpanUuid7();
-
-    [Benchmark]
-    public FoodTechBufferUuid7 FoodTechBuffer_Ctor() => new FoodTechBufferUuid7();
+    public Uuid7 FoodTechSpan_Ctor_Str() => new Uuid7(OriginalString);
+    
+    //[Benchmark]
+    //public MedoUuid7 Medo_Ctor() => new MedoUuid7();
+    
+    // [Benchmark]
+    // public FoodTechSpanCtorSpanUuid7 FoodTechSpan_CtorSpan() => new FoodTechSpanCtorSpanUuid7();
+    //
+    // [Benchmark]
+    // public FoodTechBufferUuid7 FoodTechBuffer_Ctor() => new FoodTechBufferUuid7();
 }
