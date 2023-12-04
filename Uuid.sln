@@ -4,11 +4,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uuid", "Uuid\Uuid.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UuidTests", "UuidTests\UuidTests.csproj", "{568FF221-3DDC-4393-B9F5-E8C440EC35FE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Performance", "Performance", "{92848952-A4A5-4118-B325-92B9406AB077}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PerformanceBenchmarks", "PerformanceBenchmarks", "{92848952-A4A5-4118-B325-92B9406AB077}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uuid7Performance", "Performance\Uuid7Performance\Uuid7Performance.csproj", "{65E8D5AD-38DD-4044-A1C0-72040D1DBF49}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CompareImplementations", "CompareImplementations", "{66D04B17-C807-431A-8C73-19A94D1905DB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CompareImplementationsBenchmarks", "CompareImplementationsBenchmarks", "{66D04B17-C807-431A-8C73-19A94D1905DB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComparePostgreInsert", "ComparePostgreInsert", "{5CCA68E9-D07A-4383-BF0A-752506281A38}"
 EndProject

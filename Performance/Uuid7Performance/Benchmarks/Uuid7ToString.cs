@@ -9,7 +9,7 @@ using FoodTechSpanUuidToStringRefact = FoodTech.Span.SpanStringRefact.Uuid7;
 namespace MyBenchmarks;
 
 [AllStatisticsColumn]
-public class ToStringTests
+public class Uuid7ToString
 {
     // private MedoUuid7 _uuid71;
     // private FoodTechSpanUuid7 _uuid72;

@@ -5,7 +5,7 @@ using MedoUuid7 = Medo.Uuid7;
 namespace MyBenchmarks;
 
 [AllStatisticsColumn]
-public class ParseString
+public class Uuid7ParseString
 {
     public string OriginalString;
 

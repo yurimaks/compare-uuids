@@ -80,7 +80,7 @@ public readonly struct Uuid7 :
     {
         Bytes = guid.ToByteArray(true);
     }
-
+    
     public Uuid7(ReadOnlySpan<byte> span)
     {
         if (span == null) ThrowHelper.ThrowCannotBeNull();

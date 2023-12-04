@@ -1,15 +1,11 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
-using Uuid;
-
-namespace FoodTech.Uuid.Final;
+﻿namespace FoodTech.Uuid.Final;
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Security.Cryptography;
-using Uuid;
 
 #if NET7_0_OR_GREATER
 using System.Runtime.Intrinsics;
@@ -31,7 +27,8 @@ public readonly struct Uuid7 :
     IComparable<Uuid7>,
     IEquatable<Uuid7>,
     IComparable<Guid>,
-    IEquatable<Guid>
+    IEquatable<Guid>,
+    ISpanParsable<Uuid7>
 {
     private const long UnixEpochMilliseconds = 62_135_596_800_000;
     private const long TicksPerMillisecond = 10_000;
@@ -96,8 +93,8 @@ public readonly struct Uuid7 :
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        var result = new UuidResult();
-        TryParseUuid(input, ref result);
+        var result = new UuidResult(UuidParseThrowStyle.All);
+        var success = TryParseUuid(input, ref result);
         Bytes = result.Bytes;
     }
     
@@ -365,18 +362,21 @@ public readonly struct Uuid7 :
     public string ToString(string? format, IFormatProvider? provider)
     {
         if (string.IsNullOrEmpty(format)) format = "D";
-        if (format.Length != 1) ThrowBadGuidFormatSpecification();
-        return format[0] switch
-        {
-            'D' or 'd' => WriteAsDefaultString(Bytes),
-            _ => ThrowBadGuidFormatSpecification()
-        };
+        if (format.Length != 1) ThrowBadGuidFormatSpecification<string>();
+        switch (format[0]) {
+            case 'D' or 'd': {
+                Span<char> destChars = stackalloc char[36];
+                WriteAsDefaultString(ref destChars, Bytes);
+                return new string(destChars);
+            }
+            default: {
+                return ThrowBadGuidFormatSpecification<string>();
+            }
+        }
     }
 
-    private static string WriteAsDefaultString(ReadOnlySpan<byte> bytes)
+    private static void WriteAsDefaultString(ref Span<char> destChars, ReadOnlySpan<byte> bytes)
     {
-        Span<char> destChars = stackalloc char[36];
-
         HexByteToTwoChars(destChars, 0, 1, bytes[0]);
         HexByteToTwoChars(destChars, 2, 3, bytes[1]);
         HexByteToTwoChars(destChars, 4, 5, bytes[2]);
@@ -397,10 +397,8 @@ public readonly struct Uuid7 :
         HexByteToTwoChars(destChars, 30, 31, bytes[13]);
         HexByteToTwoChars(destChars, 32, 33, bytes[14]);
         HexByteToTwoChars(destChars, 34, 35, bytes[15]);
-
-        return new string(destChars);
     }
-
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void HexByteToTwoChars(Span<char> destChars, byte indexOne, byte indexTwo, byte thisByte)
     {
@@ -411,49 +409,58 @@ public readonly struct Uuid7 :
     #endregion
 
     #region ParseString
-
-        public static Uuid7 Parse(string input)
+    
+    public static Uuid7 Parse(string input, IFormatProvider? provider = null)
     {
         ArgumentNullException.ThrowIfNull(input);
         return Parse((ReadOnlySpan<char>)input);
     }
-
-    public static Uuid7 Parse(ReadOnlySpan<char> input)
+    
+    public static Uuid7 Parse(ReadOnlySpan<char> input, IFormatProvider? provider = null)
     {
-        var result = new UuidResult();
+        var result = new UuidResult(UuidParseThrowStyle.All);
         bool success = TryParseUuid(input, ref result);
         return new Uuid7(result.Bytes);
     }
-
-    public static bool TryParse(string input, out Uuid7 result)
+    
+    public static bool TryParse(string? input, out Uuid7 result) => TryParse(input, null, out result);
+    
+    public static bool TryParse(string? input, IFormatProvider? provider, out Uuid7 result)
     {
         if (string.IsNullOrEmpty(input))
         {
-            result = default;
+            result = Empty;
             return false;
         }
 
-        return TryParse((ReadOnlySpan<char>)input, out result);
+        return TryParse((ReadOnlySpan<char>)input, provider, out result);
     }
-
-    public static bool TryParse(ReadOnlySpan<char> input, out Uuid7 result)
+    
+    public static bool TryParse(ReadOnlySpan<char> input, out Uuid7 result) => TryParse(input, null, out result);
+    
+    public static bool TryParse(ReadOnlySpan<char> input, IFormatProvider? provider, out Uuid7 result)
     {
-        var parseResult = new UuidResult();
+        var parseResult = new UuidResult(UuidParseThrowStyle.None);
         if (TryParseUuid(input, ref parseResult))
         {
             result = new Uuid7(parseResult.Bytes);
             return true;
         }
 
-        result = default;
+        result = Empty;
         return false;
     }
-
+    
     private static bool TryParseUuid(ReadOnlySpan<char> uuidString, ref UuidResult result)
     {
         uuidString = uuidString.Trim();
 
-        if (uuidString.Length < 32) return false;
+        if (uuidString.Length < 32)
+        {
+            result.SetFailure(ParseFailure.Format_UuidUnrecognized);
+            return false;
+        }
+
         return uuidString[0] switch
         {
             '(' => TryParseExactP(uuidString, ref result),
@@ -489,25 +496,26 @@ public readonly struct Uuid7 :
             return false;
         }
 
+        result.Bytes = new byte[16];
         //Span<byte> bytes = stackalloc byte[16];
-        Span<byte> bytes = result.Bytes;
+        //Span<byte> bytes = result.Bytes;
         int invalidIfNegative = 0;
-        bytes[0] = DecodeByte(guidString[0], guidString[1], ref invalidIfNegative);
-        bytes[1] = DecodeByte(guidString[2], guidString[3], ref invalidIfNegative);
-        bytes[2] = DecodeByte(guidString[4], guidString[5], ref invalidIfNegative);
-        bytes[3] = DecodeByte(guidString[6], guidString[7], ref invalidIfNegative);
-        bytes[4] = DecodeByte(guidString[9], guidString[10], ref invalidIfNegative);
-        bytes[5] = DecodeByte(guidString[11], guidString[12], ref invalidIfNegative);
-        bytes[6] = DecodeByte(guidString[14], guidString[15], ref invalidIfNegative);
-        bytes[7] = DecodeByte(guidString[16], guidString[17], ref invalidIfNegative);
-        bytes[8] = DecodeByte(guidString[19], guidString[20], ref invalidIfNegative);
-        bytes[9] = DecodeByte(guidString[21], guidString[22], ref invalidIfNegative);
-        bytes[10] = DecodeByte(guidString[24], guidString[25], ref invalidIfNegative);
-        bytes[11] = DecodeByte(guidString[26], guidString[27], ref invalidIfNegative);
-        bytes[12] = DecodeByte(guidString[28], guidString[29], ref invalidIfNegative);
-        bytes[13] = DecodeByte(guidString[30], guidString[31], ref invalidIfNegative);
-        bytes[14] = DecodeByte(guidString[32], guidString[33], ref invalidIfNegative);
-        bytes[15] = DecodeByte(guidString[34], guidString[35], ref invalidIfNegative);
+        result.Bytes[0] = DecodeByte(guidString[0], guidString[1], ref invalidIfNegative);
+        result.Bytes[1] = DecodeByte(guidString[2], guidString[3], ref invalidIfNegative);
+        result.Bytes[2] = DecodeByte(guidString[4], guidString[5], ref invalidIfNegative);
+        result.Bytes[3] = DecodeByte(guidString[6], guidString[7], ref invalidIfNegative);
+        result.Bytes[4] = DecodeByte(guidString[9], guidString[10], ref invalidIfNegative);
+        result.Bytes[5] = DecodeByte(guidString[11], guidString[12], ref invalidIfNegative);
+        result.Bytes[6] = DecodeByte(guidString[14], guidString[15], ref invalidIfNegative);
+        result.Bytes[7] = DecodeByte(guidString[16], guidString[17], ref invalidIfNegative);
+        result.Bytes[8] = DecodeByte(guidString[19], guidString[20], ref invalidIfNegative);
+        result.Bytes[9] = DecodeByte(guidString[21], guidString[22], ref invalidIfNegative);
+        result.Bytes[10] = DecodeByte(guidString[24], guidString[25], ref invalidIfNegative);
+        result.Bytes[11] = DecodeByte(guidString[26], guidString[27], ref invalidIfNegative);
+        result.Bytes[12] = DecodeByte(guidString[28], guidString[29], ref invalidIfNegative);
+        result.Bytes[13] = DecodeByte(guidString[30], guidString[31], ref invalidIfNegative);
+        result.Bytes[14] = DecodeByte(guidString[32], guidString[33], ref invalidIfNegative);
+        result.Bytes[15] = DecodeByte(guidString[34], guidString[35], ref invalidIfNegative);
 
         if (invalidIfNegative >= 0)
         {
@@ -529,7 +537,8 @@ public readonly struct Uuid7 :
         }
 
         //Span<byte> bytes = MemoryMarshal.AsBytes(new Span<UuidResult>(ref result));
-        Span<byte> bytes = stackalloc byte[10];
+        //Span<byte> bytes = stackalloc byte[15];
+        Span<byte> bytes = result.Bytes;
         int invalidIfNegative = 0;
         bytes[0] = DecodeByte(guidString[0], guidString[1], ref invalidIfNegative);
         bytes[1] = DecodeByte(guidString[2], guidString[3], ref invalidIfNegative);
@@ -547,8 +556,6 @@ public readonly struct Uuid7 :
         bytes[13] = DecodeByte(guidString[26], guidString[27], ref invalidIfNegative);
         bytes[14] = DecodeByte(guidString[28], guidString[29], ref invalidIfNegative);
         bytes[15] = DecodeByte(guidString[30], guidString[31], ref invalidIfNegative);
-
-        result.Bytes = bytes.ToArray();
 
         result.SetFailure(ParseFailure.Format_UuidInvalidChar);
         return false;
@@ -590,6 +597,11 @@ public readonly struct Uuid7 :
 
     #endregion
 
+    private enum UuidParseThrowStyle : byte
+    {
+        None = 0,
+        All = 1
+    }
 
     private enum ParseFailure
     {
@@ -608,12 +620,23 @@ public readonly struct Uuid7 :
         Overflow_UInt32,
     }
 
-    private struct UuidResult()
+    private struct UuidResult
     {
-        internal byte[] Bytes = new byte[16];
+        internal byte[] Bytes;
+
+        private readonly UuidParseThrowStyle _throwStyle;
+
+        public UuidResult(UuidParseThrowStyle canThrow)
+        {
+            _throwStyle = canThrow;
+        }
 
         internal readonly void SetFailure(ParseFailure failureKind)
         {
+            if (_throwStyle == UuidParseThrowStyle.None)
+            {
+                return;
+            }
 
             if (failureKind == ParseFailure.Overflow_UInt32)
             {
@@ -642,7 +665,7 @@ public readonly struct Uuid7 :
     }
 
     [DoesNotReturn]
-    private static string ThrowBadGuidFormatSpecification() => throw new FormatException("Format_InvalidGuidFormatSpecification");
+    private static T ThrowBadGuidFormatSpecification<T>() => throw new FormatException("Format_InvalidGuidFormatSpecification");
 
     [DoesNotReturn]
     private static int ThrowIfNotEqual(string message) => throw new ArgumentException(message);

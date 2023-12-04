@@ -7,7 +7,7 @@ using Uuid7 = FoodTech.Uuid.Final.Uuid7;
 namespace MyBenchmarks;
 
 [AllStatisticsColumn]
-public class UuidCreationsViaStatic
+public class Uuid7ViaStatic
 {
     [Benchmark(Baseline = true)]
     public Guid Guid_Ctor_Static() => Guid.NewGuid();

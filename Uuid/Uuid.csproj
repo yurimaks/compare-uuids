@@ -15,4 +15,8 @@
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Folder Include="FoodTech\bin\" />
+    </ItemGroup>
+
 </Project>

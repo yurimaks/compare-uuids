@@ -23,10 +23,10 @@ namespace MyBenchmarks
 
             var summary = BenchmarkRunner.Run(types:new[]
             {
-                typeof(UuidCreationsViaCtor),
-                typeof(UuidCreationsViaStatic),
-                typeof(ToStringTests),
-                typeof(ParseString)
+                typeof(Uuid7ViaCtor),
+                typeof(Uuid7ViaStatic),
+                typeof(Uuid7ToString),
+                typeof(Uuid7ParseString)
             }, config);
         }
     }
